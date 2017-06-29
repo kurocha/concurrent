@@ -12,21 +12,20 @@
 #include <iostream>
 #include <cassert>
 
-#include "Coroutine/libco.h"
-
 namespace Concurrent
 {
 	thread_local Fiber Fiber::main;
 	thread_local Fiber * Fiber::current;
 	
-	Fiber::Fiber()
+	Fiber::Fiber() noexcept
 	{
-		_context = co_active();
+		coro_create(&_context, nullptr, nullptr, nullptr, 0);
 	}
 	
-	Fiber::Fiber(std::function<void()> function, std::size_t stack_size) : _function(function)
+	Fiber::Fiber(std::function<void()> function, std::size_t stack_size) noexcept : _function(function)
 	{
-		_context = co_create(stack_size, &coentry);
+		coro_stack_alloc(&_stack, stack_size);
+		coro_create(&_context, &coentry, static_cast<void *>(this), _stack.sptr, _stack.ssze);
 	}
 	
 	Fiber::~Fiber()
@@ -35,12 +34,13 @@ namespace Concurrent
 			throw std::logic_error("fiber still running");
 		}
 		
-		if (_context != main._context) {
-			co_delete(_context);
+		if (this != &main) {
+			coro_stack_free(&_stack);
+			coro_destroy(&_context);
 		}
 	}
 	
-	void Fiber::coentry()
+	void Fiber::coentry(void * arg)
 	{
 		auto current = Fiber::current;
 		
@@ -72,7 +72,7 @@ namespace Concurrent
 		}
 		
 		Fiber::current = this;
-		co_switch(_context);
+		coro_transfer(&_caller->_context, &_context);
 		Fiber::current = _caller;
 		
 		if (_exception) {
@@ -93,7 +93,7 @@ namespace Concurrent
 	{
 		assert(Fiber::current == this);
 		
-		co_switch(_caller->_context);
+		coro_transfer(&_context, &_caller->_context);
 		
 		if (_status == Status::STOPPED) {
 			throw Stop();

@@ -1,0 +1,124 @@
+//
+//  Test.Fiber.cpp
+//  This file is part of the "Memory" project and released under the MIT License.
+//
+//  Created by Samuel Williams on 28/6/2017.
+//  Copyright, 2017, by Samuel Williams. All rights reserved.
+//
+
+#include <UnitTest/UnitTest.hpp>
+
+#include "Concurrent/Fiber.hpp"
+
+namespace Concurrent
+{
+	static std::ostream & operator<<(std::ostream & output, const Status & status)
+	{
+		if (status == Status::READY) {
+			return output << "READY";
+		} else if (status == Status::RUNNING) {
+			return output << "RUNNING";
+		} else if (status == Status::STOPPED) {
+			return output << "STOPPED";
+		} else if (status == Status::FAILED) {
+			return output << "FAILED";
+		} else if (status == Status::FINISHED) {
+			return output << "FINISHED";
+		} else {
+			return output << "???";
+		}
+	}
+	
+	UnitTest::Suite FiberTestSuite {
+		"Concurrent::Fiber",
+		
+		{"it should resume",
+			[](UnitTest::Examiner & examiner) {
+				int x = 10;
+				
+				Fiber fiber([&](){
+					x = 20;
+				});
+				
+				fiber.resume();
+				
+				examiner.expect(x) == 20;
+			}
+		},
+		
+		{"it should yield",
+			[](UnitTest::Examiner & examiner) {
+				int x = 10;
+				
+				Fiber fiber([&](){
+					x = 20;
+					Fiber::current->yield();
+					x = 30;
+				});
+				
+				fiber.resume();
+				examiner.expect(x) == 20;
+				
+				fiber.resume();
+				examiner.expect(x) == 30;
+			}
+		},
+		
+		{"it should throw exceptions",
+			[](UnitTest::Examiner & examiner) {
+				Fiber fiber([&](){
+					throw std::logic_error("your logic has failed me");
+				});
+				
+				examiner.expect([&](){
+					fiber.resume();
+				}).to_throw<std::logic_error>();
+			}
+		},
+		
+		{"it can be stopped",
+			[](UnitTest::Examiner & examiner) {
+				int count = 0;
+				
+				Fiber fiber([&](){
+					while (true) {
+						count += 1;
+						Fiber::current->yield();
+					}
+				});
+				
+				fiber.resume();
+				examiner.expect(count) == 1;
+				
+				fiber.stop();
+				examiner.expect(fiber.status()) == Status::STOPPED;
+			}
+		},
+		
+		{"it should resume in a nested fiber",
+			[](UnitTest::Examiner & examiner) {
+				std::string order;
+				
+				order += 'A';
+				
+				Fiber outer([&](){
+					order += 'B';
+					
+					Fiber inner([&](){
+						order += 'C';
+					});
+					
+					order += 'D';
+					inner.resume();
+					order += 'E';
+				});
+				
+				order += 'F';
+				outer.resume();
+				order += 'G';
+				
+				examiner.expect(order) == "AFBDCEG";
+			}
+		},
+	};
+}

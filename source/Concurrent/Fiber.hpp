@@ -11,6 +11,8 @@
 #include <functional>
 #include <exception>
 
+#include "coro.h"
+
 namespace Concurrent
 {
 	enum class Status
@@ -30,9 +32,7 @@ namespace Concurrent
 		thread_local static Fiber main;
 		thread_local static Fiber * current;
 		
-		static void yield() {current->yield();}
-		
-		Fiber(std::function<void()> function, std::size_t stack_size = 1024*4) noexcept;
+		Fiber(std::function<void()> function, std::size_t stack_size = 1024) noexcept;
 		~Fiber();
 		
 		const Status & status() noexcept {return _status;}
@@ -47,10 +47,12 @@ namespace Concurrent
 		void stop();
 		
 	private:
-		Fiber();
-		[[noreturn]] static void coentry();
+		Fiber() noexcept;
+		[[noreturn]] static void coentry(void * arg);
 		
-		void * _context = nullptr;
+		struct coro_context _context;
+		struct coro_stack _stack = {0};
+		
 		Status _status = Status::READY;
 		
 		Fiber * _caller = nullptr;
