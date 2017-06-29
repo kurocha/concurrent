@@ -67,9 +67,10 @@ namespace Concurrent
 		void consume(Function process)
 		{
 			std::unique_lock<std::mutex> lock(*this);
+			
 			while (true) {
-				if (not Queue::empty()) {
-					Type item { std::move(Queue::front()) };
+				if (!Queue::empty()) {
+					Type item{std::move(Queue::front())};
 					Queue::pop();
 					notify_one();
 					lock.unlock();
