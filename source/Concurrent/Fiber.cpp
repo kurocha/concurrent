@@ -42,7 +42,7 @@ namespace Concurrent
 	
 	void Fiber::coentry(void * arg)
 	{
-		auto current = Fiber::current;
+		auto current = reinterpret_cast<Fiber *>(arg);
 		
 		current->_status = Status::RUNNING;
 		
@@ -50,7 +50,7 @@ namespace Concurrent
 			current->_function();
 			current->_status = Status::FINISHED;
 		} catch (Stop) {
-			// Ignore.
+			// Ignore - not an actual error.
 		} catch (...) {
 			current->_status = Status::FAILED;
 			current->_exception = std::current_exception();
