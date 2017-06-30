@@ -9,6 +9,7 @@
 #include <UnitTest/UnitTest.hpp>
 
 #include <Concurrent/Condition.hpp>
+#include <Concurrent/Fiber.hpp>
 
 namespace Concurrent
 {
@@ -29,7 +30,7 @@ namespace Concurrent
 				
 				examiner.expect(condition.count()) == 1;
 				
-				condition.signal();
+				condition.resume();
 				
 				examiner.expect(condition.count()) == 0;
 			}

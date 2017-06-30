@@ -8,39 +8,28 @@
 
 #pragma once
 
-#include "Fiber.hpp"
-
 #include <vector>
 
 namespace Concurrent
 {
+	class Fiber;
+	
 	// A synchronization primative, which allows fibers to wait until a particular condition is triggered.
 	class Condition
 	{
 	public:
 		Condition();
-		virtual ~Condition();
 		
-		void wait()
-		{
-			_waiting.push_back(Fiber::current);
-			Fiber::current->yield();
-		}
+		// If a condition goes out of scope, all fibers waiting on it will be stopped.
+		~Condition();
 		
-		void signal()
-		{
-			while (!_waiting.empty()) {
-				auto fiber = _waiting.back();
-				_waiting.pop_back();
-				
-				fiber->resume();
-			}
-		}
+		Condition(const Condition & other) = delete;
+		Condition & operator=(const Condition & other) = delete;
 		
-		std::size_t count() const noexcept
-		{
-			return _waiting.size();
-		}
+		void wait();
+		void resume();
+		
+		std::size_t count() const noexcept {return _waiting.size();}
 		
 	private:
 		std::vector<Fiber *> _waiting;

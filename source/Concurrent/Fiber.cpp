@@ -16,87 +16,174 @@ namespace Concurrent
 {
 	thread_local Fiber Fiber::main;
 	thread_local Fiber * Fiber::current;
+	thread_local std::size_t Fiber::level = 0;
 	
-	Fiber::Fiber() noexcept
+	Fiber::Stack::Stack(std::size_t size)
 	{
-		coro_create(&_context, nullptr, nullptr, nullptr, 0);
+		coro_stack_alloc(this, size);
 	}
 	
-	Fiber::Fiber(std::function<void()> function, std::size_t stack_size) noexcept : _function(function)
+	Fiber::Stack::Stack()
 	{
-		coro_stack_alloc(&_stack, stack_size);
-		coro_create(&_context, &coentry, static_cast<void *>(this), _stack.sptr, _stack.ssze);
+		sptr = nullptr;
+		ssze = 0;
+	}
+	
+	Fiber::Stack::~Stack()
+	{
+		if (sptr) {
+			coro_stack_free(this);
+		}
+	}
+	
+	Fiber::Context::Context()
+	{
+		coro_create(this, nullptr, nullptr, nullptr, 0);
+	}
+	
+	Fiber::Context::Context(Stack & stack, EntryT entry, void * argument)
+	{
+		coro_create(this, entry, argument, stack.sptr, stack.ssze);
+	}
+	
+	Fiber::Context::~Context()
+	{
+		coro_destroy(this);
+	}
+	
+	Fiber::Fiber() noexcept : _status(Status::MAIN), _annotation("main")
+	{
+	}
+	
+	Fiber::Fiber(const std::string & annotation, std::function<void()> function, std::size_t stack_size) noexcept : _annotation(annotation), _function(function), _stack(stack_size), _context(_stack, &coentry, this)
+	{
+	}
+	
+	Fiber::Fiber(std::function<void()> function, std::size_t stack_size) noexcept : Fiber("", function, stack_size)
+	{
 	}
 	
 	Fiber::~Fiber()
 	{
-		if (_status == Status::RUNNING) {
-			throw std::logic_error("fiber still running");
+		// std::cerr << std::string(Fiber::level, '\t') << "-> ~Fiber " << _annotation << std::endl;
+
+		if (_status == Status::READY) {
+			// Nothing to do here.
+		} else if (_status == Status::RUNNING) {
+			// Force fiber to stop.
+			stop();
+		} else if (_status == Status::FINISHING) {
+			// Still cleaning up...
+			resume();
 		}
 		
-		if (this != &main) {
-			coro_stack_free(&_stack);
-			coro_destroy(&_context);
-		}
+		// std::cerr << std::string(Fiber::level, '\t') << "<- ~Fiber " << _annotation << std::endl;
 	}
 	
 	void Fiber::coentry(void * arg)
 	{
-		auto current = reinterpret_cast<Fiber *>(arg);
-		
-		current->_status = Status::RUNNING;
+		auto fiber = reinterpret_cast<Fiber *>(arg);
 		
 		try {
-			current->_function();
-			current->_status = Status::FINISHED;
+			fiber->_status = Status::RUNNING;
+			fiber->_function();
 		} catch (Stop) {
 			// Ignore - not an actual error.
 		} catch (...) {
-			current->_status = Status::FAILED;
-			current->_exception = std::current_exception();
+			fiber->_exception = std::current_exception();
 		}
+
+		fiber->_status = Status::FINISHING;
+
+		// std::cerr << std::string(Fiber::level, '\t') << "*** coroutine completion " << fiber->_annotation << std::endl;
+
+		// Notify other fibers that we've completed.
+		fiber->_completion.resume();
+
+		fiber->_status = Status::FINISHED;
+
+		// std::cerr << std::string(Fiber::level, '\t') << "*** coroutine yield " << fiber->_annotation << std::endl;
+
+		fiber->yield();
 		
-		current->yield();
-		
-		throw std::logic_error("resume dead fiber");
+		std::terminate();
 	}
 	
 	void Fiber::resume()
 	{
-		assert(Fiber::current != this);
-		
+		// We cannot double-resume.
+		assert(_caller == nullptr);
+
 		if (Fiber::current) {
 			_caller = Fiber::current;
 		} else {
 			_caller = &Fiber::main;
 		}
-		
+
+		assert(_status != Status::FINISHED);
+
 		Fiber::current = this;
+		// std::cerr << std::string(Fiber::level, '\t') << _caller->_annotation << " resuming " << _annotation << std::endl;
+
+		Fiber::level += 1;
 		coro_transfer(&_caller->_context, &_context);
+		Fiber::level -= 1;
+
+		// std::cerr << std::string(Fiber::level, '\t') << "resume back in " << _caller->_annotation << std::endl;
+
 		Fiber::current = _caller;
-		
+
+		this->_caller = nullptr;
+
+		// Once we yield back to the caller, if there was an exception, we rethrow it.
 		if (_exception) {
 			std::rethrow_exception(_exception);
 		}
 	}
+
+	void Fiber::yield()
+	{
+		assert(_caller != nullptr);
+
+		// std::cerr << std::string(Fiber::level, '\t') << _annotation << " yielding to " << _caller->_annotation << std::endl;
+
+		coro_transfer(&_context, &_caller->_context);
+
+		// std::cerr << std::string(Fiber::level, '\t') << "yield back to " << _annotation << std::endl;
+
+		if (_status == Status::STOPPED) {
+			throw Stop();
+		}
+	}
+
+	void Fiber::transfer()
+	{
+		Fiber * current = Fiber::current;
+
+		if (current == nullptr) {
+			current = &Fiber::main;
+		}
+
+		// std::cerr << std::string(Fiber::level, '\t') << "transfer from " << current->_annotation << " to " << _annotation << std::endl;
+
+		coro_transfer(&current->_context, &_context);
+	}
+	
+	void Fiber::wait()
+	{
+		// Cannot wait for own self to complete.
+		assert(Fiber::current != this);
+		
+		_completion.wait();
+	}
 	
 	void Fiber::stop()
 	{
+		// Cannot stop self.
 		assert(Fiber::current != this);
 		
 		_status = Status::STOPPED;
 		
 		resume();
-	}
-	
-	void Fiber::yield()
-	{
-		assert(Fiber::current == this);
-		
-		coro_transfer(&_context, &_caller->_context);
-		
-		if (_status == Status::STOPPED) {
-			throw Stop();
-		}
 	}
 }

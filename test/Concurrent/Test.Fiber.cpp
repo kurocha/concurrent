@@ -14,14 +14,14 @@ namespace Concurrent
 {
 	static std::ostream & operator<<(std::ostream & output, const Status & status)
 	{
-		if (status == Status::READY) {
+		if (status == Status::MAIN) {
+			return output << "MAIN";
+		} else if (status == Status::READY) {
 			return output << "READY";
 		} else if (status == Status::RUNNING) {
 			return output << "RUNNING";
 		} else if (status == Status::STOPPED) {
 			return output << "STOPPED";
-		} else if (status == Status::FAILED) {
-			return output << "FAILED";
 		} else if (status == Status::FINISHED) {
 			return output << "FINISHED";
 		} else {
@@ -87,11 +87,16 @@ namespace Concurrent
 					}
 				});
 				
+				examiner.expect(fiber.status()) == Status::READY;
+				
 				fiber.resume();
+				
 				examiner.expect(count) == 1;
+				examiner.expect(fiber.status()) == Status::RUNNING;
 				
 				fiber.stop();
-				examiner.expect(fiber.status()) == Status::STOPPED;
+				
+				examiner.expect(fiber.status()) == Status::FINISHED;
 			}
 		},
 		
@@ -119,6 +124,6 @@ namespace Concurrent
 				
 				examiner.expect(order) == "AFBDCEG";
 			}
-		},
+		}
 	};
 }
