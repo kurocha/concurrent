@@ -18,39 +18,6 @@ namespace Concurrent
 	thread_local Fiber * Fiber::current;
 	thread_local std::size_t Fiber::level = 0;
 	
-	Fiber::Stack::Stack(std::size_t size)
-	{
-		coro_stack_alloc(this, size);
-	}
-	
-	Fiber::Stack::Stack()
-	{
-		sptr = nullptr;
-		ssze = 0;
-	}
-	
-	Fiber::Stack::~Stack()
-	{
-		if (sptr) {
-			coro_stack_free(this);
-		}
-	}
-	
-	Fiber::Context::Context()
-	{
-		coro_create(this, nullptr, nullptr, nullptr, 0);
-	}
-	
-	Fiber::Context::Context(Stack & stack, EntryT entry, void * argument)
-	{
-		coro_create(this, entry, argument, stack.sptr, stack.ssze);
-	}
-	
-	Fiber::Context::~Context()
-	{
-		coro_destroy(this);
-	}
-	
 	Fiber::Fiber() noexcept : _status(Status::MAIN), _annotation("main")
 	{
 	}
@@ -185,5 +152,64 @@ namespace Concurrent
 		_status = Status::STOPPED;
 		
 		resume();
+	}
+	
+	Fiber::Stack::Stack(std::size_t size)
+	{
+		coro_stack_alloc(this, size);
+	}
+	
+	Fiber::Stack::Stack()
+	{
+		sptr = nullptr;
+		ssze = 0;
+	}
+	
+	Fiber::Stack::~Stack()
+	{
+		if (sptr) {
+			coro_stack_free(this);
+		}
+	}
+	
+	Fiber::Context::Context()
+	{
+		coro_create(this, nullptr, nullptr, nullptr, 0);
+	}
+	
+	Fiber::Context::Context(Stack & stack, EntryT entry, void * argument)
+	{
+		coro_create(this, entry, argument, stack.sptr, stack.ssze);
+	}
+	
+	Fiber::Context::~Context()
+	{
+		coro_destroy(this);
+	}
+	
+	Fiber::Pool::Pool(std::size_t stack_size) : _stack_size(stack_size)
+	{
+	}
+	
+	Fiber::Pool::~Pool()
+	{
+	}
+	
+	Fiber & Fiber::Pool::resume(std::function<void()> function)
+	{
+		// if (_stack.empty()) {
+			// _fibers.emplace_back(function)
+		// } else {
+			// auto stack = _stacks.back();
+			
+			_fibers.emplace_back(function/*, stack, this*/);
+			// _stacks.pop_back();
+			
+			auto & fiber = _fibers.back();
+			
+			fiber.resume();
+			
+			return fiber;
+		// }
 	}
 }

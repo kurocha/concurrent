@@ -11,7 +11,7 @@ Provides cooperative multi-tasking.
 ```c++
 int x = 10;
 
-Fiber fiber([&](){
+Fiber fiber([&]{
 	x = 20;
 	Fiber::current->yield();
 	x = 30;

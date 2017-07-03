@@ -16,6 +16,7 @@
 #include "coro.h"
 
 #include <string>
+#include <list>
 
 namespace Concurrent
 {
@@ -38,7 +39,7 @@ namespace Concurrent
 		thread_local static Fiber * current;
 		thread_local static std::size_t level;
 		
-		static constexpr std::size_t DEFAULT_STACK_SIZE = 1024*8;
+		static constexpr std::size_t DEFAULT_STACK_SIZE = 1024*16;
 		
 		Fiber(const std::string & annotation, std::function<void()> function, std::size_t stack_size = DEFAULT_STACK_SIZE) noexcept;
 		Fiber(std::function<void()> function, std::size_t stack_size = DEFAULT_STACK_SIZE) noexcept;
@@ -106,5 +107,21 @@ namespace Concurrent
 		
 		Condition _completion;
 		Fiber * _caller = nullptr;
+		
+	public:
+		class Pool
+		{
+		public:
+			Pool(std::size_t stack_size = DEFAULT_STACK_SIZE);
+			~Pool();
+			
+			Fiber & resume(std::function<void()> function);
+			
+		protected:
+			std::size_t _stack_size = 0;
+			
+			std::list<Stack> _stacks;
+			std::list<Fiber> _fibers;
+		};
 	};
 }

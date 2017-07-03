@@ -29,7 +29,7 @@ namespace Concurrent
 					
 					// This distributor can handle 16 items in it's work queue. After that, it will block the calling thread.
 					// Alternatively, specify 0 for the queue depth and it will accept an unlimited number of jobs.
-					distributor([&](){
+					distributor([&]{
 						// No guarantee of synchronization here.
 						count += 1;
 					});

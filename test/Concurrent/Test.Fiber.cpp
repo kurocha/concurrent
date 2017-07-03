@@ -36,7 +36,7 @@ namespace Concurrent
 			[](UnitTest::Examiner & examiner) {
 				int x = 10;
 				
-				Fiber fiber([&](){
+				Fiber fiber([&]{
 					x = 20;
 				});
 				
@@ -50,7 +50,7 @@ namespace Concurrent
 			[](UnitTest::Examiner & examiner) {
 				int x = 10;
 				
-				Fiber fiber([&](){
+				Fiber fiber([&]{
 					x = 20;
 					Fiber::current->yield();
 					x = 30;
@@ -66,11 +66,11 @@ namespace Concurrent
 		
 		{"it should throw exceptions",
 			[](UnitTest::Examiner & examiner) {
-				Fiber fiber([&](){
+				Fiber fiber([&]{
 					throw std::logic_error("your logic has failed me");
 				});
 				
-				examiner.expect([&](){
+				examiner.expect([&]{
 					fiber.resume();
 				}).to_throw<std::logic_error>();
 			}
@@ -80,7 +80,7 @@ namespace Concurrent
 			[](UnitTest::Examiner & examiner) {
 				int count = 0;
 				
-				Fiber fiber([&](){
+				Fiber fiber([&]{
 					while (true) {
 						count += 1;
 						Fiber::current->yield();
@@ -106,10 +106,10 @@ namespace Concurrent
 				
 				order += 'A';
 				
-				Fiber outer([&](){
+				Fiber outer([&]{
 					order += 'B';
 					
-					Fiber inner([&](){
+					Fiber inner([&]{
 						order += 'C';
 					});
 					
@@ -124,6 +124,24 @@ namespace Concurrent
 				
 				examiner.expect(order) == "AFBDCEG";
 			}
-		}
+		},
+		
+		{"it can allocate fibers from a pool",
+			[](UnitTest::Examiner & examiner) {
+				std::string order;
+				
+				// A pool groups together fibers and will stop them once it goes out of scope.
+				Fiber::Pool pool;
+				
+				std::size_t count = 0;
+				for (std::size_t i = 0; i < 5; i += 1) {
+					pool.resume([&]{
+						count += 1;
+					});
+				}
+				
+				examiner.expect(count) == 5;
+			}
+		},
 	};
 }
