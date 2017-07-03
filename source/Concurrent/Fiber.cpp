@@ -22,11 +22,11 @@ namespace Concurrent
 	{
 	}
 	
-	Fiber::Fiber(const std::string & annotation, const std::function<void()> & function, std::size_t stack_size) noexcept : _annotation(annotation), _function(function), _stack(stack_size), _context(_stack, &coentry, this)
+	Fiber::Fiber(const std::string & annotation, std::function<void()> && function, std::size_t stack_size) noexcept : _annotation(annotation), _function(std::move(function)), _stack(stack_size), _context(_stack, &coentry, this)
 	{
 	}
 	
-	Fiber::Fiber(const std::function<void()> & function, std::size_t stack_size) noexcept : Fiber("", function, stack_size)
+	Fiber::Fiber(std::function<void()> && function, std::size_t stack_size) noexcept : Fiber("", std::move(function), stack_size)
 	{
 	}
 	
@@ -195,14 +195,14 @@ namespace Concurrent
 	{
 	}
 	
-	Fiber & Fiber::Pool::resume(const std::function<void()> & function)
+	Fiber & Fiber::Pool::resume(std::function<void()> && function)
 	{
 		// if (_stack.empty()) {
 			// _fibers.emplace_back(function)
 		// } else {
 			// auto stack = _stacks.back();
 			
-			_fibers.emplace_back(function/*, stack, this*/);
+			_fibers.emplace_back(std::move(function)/*, stack, this*/);
 			// _stacks.pop_back();
 			
 			auto & fiber = _fibers.back();
