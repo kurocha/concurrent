@@ -41,8 +41,8 @@ namespace Concurrent
 		
 		static constexpr std::size_t DEFAULT_STACK_SIZE = 1024*16;
 		
-		Fiber(const std::string & annotation, std::function<void()> function, std::size_t stack_size = DEFAULT_STACK_SIZE) noexcept;
-		Fiber(std::function<void()> function, std::size_t stack_size = DEFAULT_STACK_SIZE) noexcept;
+		Fiber(const std::string & annotation, const std::function<void()> & function, std::size_t stack_size = DEFAULT_STACK_SIZE) noexcept;
+		Fiber(const std::function<void()> & function, std::size_t stack_size = DEFAULT_STACK_SIZE) noexcept;
 		~Fiber();
 		
 		Fiber(const Fiber & other) = delete;
@@ -115,7 +115,7 @@ namespace Concurrent
 			Pool(std::size_t stack_size = DEFAULT_STACK_SIZE);
 			~Pool();
 			
-			Fiber & resume(std::function<void()> function);
+			Fiber & resume(const std::function<void()> & function);
 			
 		protected:
 			std::size_t _stack_size = 0;
