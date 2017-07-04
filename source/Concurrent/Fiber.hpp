@@ -11,7 +11,9 @@
 #include <functional>
 #include <exception>
 
+#include "Stack.hpp"
 #include "Condition.hpp"
+#include "Coentry.hpp"
 
 #include "coro.h"
 
@@ -41,8 +43,15 @@ namespace Concurrent
 		
 		static constexpr std::size_t DEFAULT_STACK_SIZE = 1024*16;
 		
-		Fiber(const std::string & annotation, std::function<void()> && function, std::size_t stack_size = DEFAULT_STACK_SIZE) noexcept;
-		Fiber(std::function<void()> && function, std::size_t stack_size = DEFAULT_STACK_SIZE) noexcept;
+		template <typename FunctionT>
+		Fiber(FunctionT && function, std::size_t stack_size = DEFAULT_STACK_SIZE) : _stack(stack_size), _context(_stack, function)
+		{
+		}
+		
+		template <typename FunctionT>
+		Fiber(std::string annotation, FunctionT && function, std::size_t stack_size = DEFAULT_STACK_SIZE) : _annotation(annotation), _stack(stack_size), _context(_stack, function)
+		{
+		}
 		
 		~Fiber();
 		
@@ -75,21 +84,21 @@ namespace Concurrent
 		void annotate(const std::string & annotation) {_annotation = annotation;}
 		
 	private:
-		class Stack : public coro_stack
-		{
-		public:
-			Stack(std::size_t size);
-			Stack();
-			~Stack();
-		};
+
 		
 		class Context : public coro_context
 		{
 		public:
-			typedef void(*EntryT)(void*);
-			
-			Context(Stack & stack, EntryT entry, void * argument);
 			Context();
+			
+			template <typename FunctionT>
+			Context(Stack & stack, FunctionT && function)
+			{
+				auto coentry = emplace_coentry(stack, std::move(function));
+				
+				coro_create(this, coentry->cocall, coentry, stack.base(), stack.size());
+			}
+			
 			~Context();
 		};
 		
@@ -99,8 +108,6 @@ namespace Concurrent
 		Status _status = Status::READY;
 		std::string _annotation;
 		
-		std::function<void()> _function;
-		
 		Stack _stack;
 		Context _context;
 		
@@ -109,6 +116,9 @@ namespace Concurrent
 		Condition _completion;
 		Fiber * _caller = nullptr;
 		
+		template <typename>
+		friend struct Coentry;
+		
 	public:
 		class Pool
 		{
@@ -116,7 +126,17 @@ namespace Concurrent
 			Pool(std::size_t stack_size = DEFAULT_STACK_SIZE);
 			~Pool();
 			
-			Fiber & resume(std::function<void()> && function);
+			template <typename FunctionT>
+			Fiber & resume(FunctionT && function)
+			{
+				_fibers.emplace_back(function);
+				
+				auto & fiber = _fibers.back();
+					
+				fiber.resume();
+					
+				return fiber;
+			}
 			
 		protected:
 			std::size_t _stack_size = 0;
@@ -125,4 +145,32 @@ namespace Concurrent
 			std::list<Fiber> _fibers;
 		};
 	};
+	
+	template <typename FunctionT>
+	[[noreturn]] void Coentry<FunctionT>::cocall(void * arg)
+	{
+		auto fiber = Fiber::current;
+		auto * coentry = reinterpret_cast<Coentry*>(arg);
+		
+		try {
+			fiber->_status = Status::RUNNING;
+			coentry->function();
+		} catch (Stop) {
+			// Ignore - not an actual error.
+		} catch (...) {
+			fiber->_exception = std::current_exception();
+		}
+
+		fiber->_status = Status::FINISHING;
+		// Notify other fibers that we've completed.
+		fiber->_completion.resume();
+		fiber->_status = Status::FINISHED;
+		
+		// Going out of scope.
+		coentry->~Coentry();
+		
+		fiber->yield();
+		
+		std::terminate();
+	}
 }

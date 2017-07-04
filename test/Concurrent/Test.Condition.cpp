@@ -20,7 +20,7 @@ namespace Concurrent
 			[](UnitTest::Examiner & examiner) {
 				Condition condition;
 				
-				Fiber fiber([&]{
+				Fiber fiber("waiting", [&]{
 					condition.wait();
 				});
 				

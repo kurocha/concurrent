@@ -39,7 +39,7 @@ define_target "concurrent-tests" do |target|
 		run tests: "Concurrent", source_files: test_root.glob('Concurrent/**/*.cpp')
 	end
 	
-	target.depends "Language/C++11", private: true
+	target.depends "Language/C++14", private: true
 	
 	target.depends "Library/UnitTest"
 	target.depends "Library/Concurrent"
