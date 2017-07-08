@@ -2,6 +2,22 @@
 
 Provides basic concurrency primitives.
 
+## Building
+
+Firstly the build tool `teapot` needs to be installed (which requires [Ruby][2]):
+ 
+	$ gem install teapot
+
+To build and run the software:
+
+	$ teapot run Application/Concurrent variant-debug
+
+To run unit tests, if available:
+
+	$ teapot run Test/Concurrent variant-debug
+
+[2]: http://www.ruby-lang.org/en/downloads/
+
 ## Usage
 
 ### `Concurrent::Fiber`
@@ -22,6 +38,14 @@ fiber.resume();
 fiber.resume();
 // x is now 30.
 ```
+
+## Contributing
+
+1. Fork it
+2. Create your feature branch (`git checkout -b my-new-feature`)
+3. Commit your changes (`git commit -am 'Add some feature'`)
+4. Push to the branch (`git push origin my-new-feature`)
+5. Create new Pull Request
 
 ## License
 
