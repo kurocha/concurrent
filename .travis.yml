@@ -3,18 +3,93 @@ sudo: false
 dist: trusty
 cache: bundler
 
-# Setup the compiler:
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-      - llvm-toolchain-trusty-4.0
-    packages:
-      - clang-4.0
-      - libc++-dev
-      - libc++abi-dev
-
-env: CC=clang-4.0 CXX=clang++-4.0
+# Setup the compilers:
+matrix:
+  include:
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-4.9
+      env: CC=gcc-4.9 CXX=g++-4.9 TARGETS="compiler-gcc"
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+      env: CC=gcc-5 CXX=g++-5 TARGETS="compiler-gcc"
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-6
+      env: CC=gcc-6 CXX=g++-6 TARGETS="compiler-gcc"
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.6
+          packages:
+            - clang-3.6
+            - libc++-dev
+            - libc++abi-dev
+      env:
+        - CC=clang-3.6 CXX=clang++-3.6
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.7
+          packages:
+            - clang-3.7
+            - libc++-dev
+            - libc++abi-dev
+      env:
+        - CC=clang-3.7 CXX=clang++-3.7
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.8
+          packages:
+            - clang-3.8
+            - libc++-dev
+            - libc++abi-dev
+      env:
+        - CC=clang-3.8 CXX=clang++-3.8
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-3.9
+          packages:
+            - clang-3.9
+            - libc++-dev
+            - libc++abi-dev
+      env:
+        - CC=clang-3.9 CXX=clang++-3.9
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-trusty-4.0
+          packages:
+            - clang-4.0
+            - libc++-dev
+            - libc++abi-dev
+      env:
+        - CC=clang-4.0 CXX=clang++-4.0
 
 # Install required gems:
 install:
@@ -24,4 +99,4 @@ install:
 # Run tests:
 script:
   - teapot fetch
-  - teapot build Test/Concurrent
+  - teapot build Test/Concurrent $TARGETS
