@@ -6,8 +6,13 @@ cache: bundler
 # Setup the compiler:
 addons:
   apt:
-    sources: ["llvm-toolchain-trusty-4.0"]
-    packages: ["clang-4.0"]
+    sources:
+      - ubuntu-toolchain-r-test
+      - llvm-toolchain-trusty-4.0
+    packages:
+      - clang-4.0
+      - libc++-dev
+      - libc++abi-dev
 
 env: CC=clang-4.0 CXX=clang++-4.0
 
