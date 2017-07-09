@@ -17,7 +17,7 @@ env: CC=clang-4.0 CXX=clang++-4.0
 # Install required gems:
 install:
   - rvm use 2.4 --install --binary --fuzzy
-  - gem install teapot --version 2.0.0-rc2
+  - gem install teapot --version 2.0.0-rc3
 
 # Run tests:
 script:
