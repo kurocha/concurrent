@@ -4,9 +4,6 @@ dist: trusty
 cache: bundler
 
 # Setup the compiler:
-language: cpp
-compiler: clang
-
 addons:
   apt:
     sources: ["llvm-toolchain-trusty-4.0"]
