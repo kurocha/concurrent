@@ -2,12 +2,6 @@
 
 Provides basic concurrency primitives.
 
-Concurrent is a fantastic project with lots of potential.
-
-For examples and documentation please see the main [project page][1].
-
-[1]: http://teapot.nz/
-
 [![Build Status](https://travis-ci.org/kurocha/concurrent.svg?branch=master)](https://travis-ci.org/kurocha/concurrent)
 
 ## Setup
