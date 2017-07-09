@@ -7,8 +7,11 @@ teapot_version "1.3"
 
 # Project Metadata
 
-define_project "Concurrent" do |project|
+define_project "concurrent" do |project|
+	project.title = "Concurrent"
+	
 	project.summary = 'Primitives for concurrent execution.'
+	
 	project.license = "MIT License"
 	
 	project.add_author 'Samuel Williams', email: 'samuel.williams@oriontransfer.co.nz'
@@ -58,10 +61,8 @@ end
 
 # Configurations
 
-define_configuration "test" do |configuration|
+define_configuration "concurrent" do |configuration|
 	configuration[:source] = "http://github.com/kurocha/"
-	
-	configuration.require "project"
 	
 	# Provides all the build related infrastructure:
 	configuration.require "platforms"
@@ -72,4 +73,6 @@ define_configuration "test" do |configuration|
 	
 	# Provides some useful C++ generators:
 	configuration.require 'generate-cpp-class'
+	configuration.require 'generate-project'
+	configuration.require 'generate-travis'
 end

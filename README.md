@@ -2,23 +2,31 @@
 
 Provides basic concurrency primitives.
 
-## Building
+Concurrent is a fantastic project with lots of potential.
+
+For examples and documentation please see the main [project page][1].
+
+[1]: http://teapot.nz/
+
+[![Build Status](https://travis-ci.org/kurocha/concurrent.svg?branch=master)](https://travis-ci.org/kurocha/concurrent)
+
+## Setup
 
 Firstly the build tool `teapot` needs to be installed (which requires [Ruby][2]):
- 
+
 	$ gem install teapot
 
-To build and run the software:
+To fetch all dependencies, run:
 
-	$ teapot run Application/Concurrent variant-debug
-
-To run unit tests, if available:
-
-	$ teapot run Test/Concurrent variant-debug
+	$ teapot fetch
 
 [2]: http://www.ruby-lang.org/en/downloads/
 
 ## Usage
+
+To run unit tests:
+
+	$ teapot Test/Concurrent
 
 ### `Concurrent::Fiber`
 
@@ -41,11 +49,11 @@ fiber.resume();
 
 ## Contributing
 
-1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
+1. Fork it.
+2. Create your feature branch (`git checkout -b my-new-feature`).
+3. Commit your changes (`git commit -am 'Add some feature'`).
+4. Push to the branch (`git push origin my-new-feature`).
+5. Create new Pull Request.
 
 ## License
 
