@@ -41,7 +41,7 @@ namespace Concurrent
 		thread_local static Fiber * current;
 		thread_local static std::size_t level;
 		
-		static constexpr std::size_t DEFAULT_STACK_SIZE = 1024*16;
+		static constexpr std::size_t DEFAULT_STACK_SIZE = 1024*1024*4;
 		
 		template <typename FunctionT>
 		Fiber(FunctionT && function, std::size_t stack_size = DEFAULT_STACK_SIZE) : _stack(stack_size), _context(_stack, function)
