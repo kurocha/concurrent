@@ -26,17 +26,14 @@ namespace Concurrent
 		std::vector<std::thread> _threads;
 
 	public:
-		template <typename Function>
-		Distributor(Function function, size_type max_items_per_thread = 1, size_type concurrency = std::thread::hardware_concurrency()) : _capacity{concurrency * max_items_per_thread}
+		Distributor(size_type max_items_per_thread = 1, size_type concurrency = std::thread::hardware_concurrency()) : _capacity{concurrency * max_items_per_thread}
 		{
 			if (concurrency == 0)
 				throw std::invalid_argument("Concurrency must be non-zero");
 			
 			for (size_type count = 0; count < concurrency; count += 1)
-				_threads.emplace_back(static_cast<void (Distributor::*)(Function)>(&Distributor::consume), this, function);
+				_threads.emplace_back(&Distributor::consume, this);
 		}
-		
-		Distributor(size_type max_items_per_thread = 1, size_type concurrency = std::thread::hardware_concurrency()) : Distributor([](Type & type){type();}, max_items_per_thread, concurrency) {}
 		
 		Distributor(Distributor &&) = default;
 		Distributor &operator=(Distributor &&) = delete;
@@ -65,8 +62,7 @@ namespace Concurrent
 		}
 
 	private:
-		template <typename Function>
-		void consume(Function process)
+		void consume()
 		{
 			std::unique_lock<std::mutex> lock(*this);
 			
@@ -76,7 +72,7 @@ namespace Concurrent
 					Queue::pop();
 					notify_one();
 					lock.unlock();
-					process(item);
+					item();
 					lock.lock();
 				} else if (_done) {
 					break;

@@ -22,10 +22,7 @@ namespace Concurrent
 				
 				{
 					// Create a distributor with a queue depth of 2, with 8 threads:
-					Distributor<std::function<void()>> distributor([](std::function<void()> & work){
-						// Invoke the function.
-						work();
-					}, 2, 8);
+					Distributor<std::function<void()>> distributor;
 					
 					// This distributor can handle 16 items in it's work queue. After that, it will block the calling thread.
 					// Alternatively, specify 0 for the queue depth and it will accept an unlimited number of jobs.
