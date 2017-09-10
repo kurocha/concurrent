@@ -21,21 +21,23 @@ namespace Concurrent
 	class Distributor : Queue, std::mutex, std::condition_variable {
 		typedef typename Queue::size_type size_type;
 		
-		size_type capacity;
-		bool done = false;
-		std::vector<std::thread> threads;
+		size_type _capacity;
+		bool _done = false;
+		std::vector<std::thread> _threads;
 
 	public:
 		template <typename Function>
-		Distributor(Function function, size_type max_items_per_thread = 1, size_type concurrency = std::thread::hardware_concurrency()) : capacity{concurrency * max_items_per_thread}
+		Distributor(Function function, size_type max_items_per_thread = 1, size_type concurrency = std::thread::hardware_concurrency()) : _capacity{concurrency * max_items_per_thread}
 		{
 			if (concurrency == 0)
 				throw std::invalid_argument("Concurrency must be non-zero");
 			
 			for (size_type count = 0; count < concurrency; count += 1)
-				threads.emplace_back(static_cast<void (Distributor::*)(Function)>(&Distributor::consume), this, function);
+				_threads.emplace_back(static_cast<void (Distributor::*)(Function)>(&Distributor::consume), this, function);
 		}
-
+		
+		Distributor(size_type max_items_per_thread = 1, size_type concurrency = std::thread::hardware_concurrency()) : Distributor([](Type & type){type();}, max_items_per_thread, concurrency) {}
+		
 		Distributor(Distributor &&) = default;
 		Distributor &operator=(Distributor &&) = delete;
 
@@ -43,19 +45,19 @@ namespace Concurrent
 		{
 			{
 				std::lock_guard<std::mutex> guard(*this);
-				done = true;
+				_done = true;
 				notify_all();
 			}
 			
-			for (auto &&thread: threads) thread.join();
+			for (auto && thread: _threads) thread.join();
 		}
 
 		void operator()(Type &&value)
 		{
 			std::unique_lock<std::mutex> lock(*this);
 			
-			if (capacity > 0)
-				while (Queue::size() >= capacity)
+			if (_capacity > 0)
+				while (Queue::size() >= _capacity)
 					wait(lock);
 			
 			Queue::push(std::forward<Type>(value));
@@ -76,7 +78,7 @@ namespace Concurrent
 					lock.unlock();
 					process(item);
 					lock.lock();
-				} else if (done) {
+				} else if (_done) {
 					break;
 				} else {
 					wait(lock);
