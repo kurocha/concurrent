@@ -60,6 +60,7 @@ namespace Concurrent
 		Fiber & operator=(const Fiber & other) = delete;
 		
 		const Status & status() noexcept {return _status;}
+		const explicit operator bool() noexcept {return _status != Status::FINISHED;}
 		
 		/// Resume the function.
 		void resume();
@@ -85,8 +86,6 @@ namespace Concurrent
 		void annotate(const std::string & annotation) {_annotation = annotation;}
 		
 	private:
-
-		
 		class Context : public coro_context
 		{
 		public:
