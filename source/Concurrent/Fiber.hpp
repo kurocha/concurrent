@@ -59,8 +59,8 @@ namespace Concurrent
 		Fiber(const Fiber & other) = delete;
 		Fiber & operator=(const Fiber & other) = delete;
 		
-		const Status & status() noexcept {return _status;}
-		const explicit operator bool() noexcept {return _status != Status::FINISHED;}
+		const Status & status() const noexcept {return _status;}
+		explicit operator bool() const noexcept {return _status != Status::FINISHED;}
 		
 		/// Resume the function.
 		void resume();
