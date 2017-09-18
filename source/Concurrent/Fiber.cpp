@@ -12,6 +12,10 @@
 #include <iostream>
 #include <cassert>
 
+#if defined(VARIANT_SANITIZE)
+#include <sanitizer/common_interface_defs.h>
+#endif
+
 namespace Concurrent
 {
 	thread_local Fiber Fiber::main;
@@ -56,7 +60,20 @@ namespace Concurrent
 		// std::cerr << std::string(Fiber::level, '\t') << _caller->_annotation << " resuming " << _annotation << std::endl;
 
 		Fiber::level += 1;
+
+#if defined(VARIANT_SANITIZE)
+		std::cerr << "__sanitizer_start_switch_fiber (resume)" << std::endl;
+		void * fake_stack = nullptr;
+		__sanitizer_start_switch_fiber(&fake_stack, _stack.base(), _stack.allocated_size());
+#endif
+
 		coro_transfer(&_caller->_context, &_context);
+
+#if defined(VARIANT_SANITIZE)
+		std::cerr << "__sanitizer_finish_switch_fiber (resume)" << std::endl;
+		__sanitizer_finish_switch_fiber(fake_stack, nullptr, nullptr);
+#endif
+
 		Fiber::level -= 1;
 
 		// std::cerr << std::string(Fiber::level, '\t') << "resume back in " << _caller->_annotation << std::endl;
@@ -77,7 +94,18 @@ namespace Concurrent
 
 		// std::cerr << std::string(Fiber::level, '\t') << _annotation << " yielding to " << _caller->_annotation << std::endl;
 
+#if defined(VARIANT_SANITIZE)
+		std::cerr << "__sanitizer_start_switch_fiber (yield)" << std::endl;
+		void * fake_stack = nullptr;
+		__sanitizer_start_switch_fiber(&fake_stack, _caller->_stack.base(), _caller->_stack.allocated_size());
+#endif
+
 		coro_transfer(&_context, &_caller->_context);
+
+#if defined(VARIANT_SANITIZE)
+		std::cerr << "__sanitizer_finish_switch_fiber (yield)" << std::endl;
+		__sanitizer_finish_switch_fiber(fake_stack, nullptr, nullptr);
+#endif
 
 		// std::cerr << std::string(Fiber::level, '\t') << "yield back to " << _annotation << std::endl;
 

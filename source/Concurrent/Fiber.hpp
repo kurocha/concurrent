@@ -20,6 +20,11 @@
 #include <string>
 #include <list>
 
+#if defined(VARIANT_SANITIZE)
+#include <iostream>
+#include <sanitizer/common_interface_defs.h>
+#endif
+
 namespace Concurrent
 {
 	enum class Status
@@ -151,6 +156,13 @@ namespace Concurrent
 	{
 		auto fiber = Fiber::current;
 		auto * coentry = reinterpret_cast<Coentry*>(arg);
+		
+#if defined(VARIANT_SANITIZE)
+		std::cerr << "__sanitizer_finish_switch_fiber (call)" << std::endl;
+		const void * parent_stack_base = nullptr;
+		std::size_t parent_stack_size = 0;
+		__sanitizer_finish_switch_fiber(nullptr, &parent_stack_base, &parent_stack_size);
+#endif
 		
 		try {
 			fiber->_status = Status::RUNNING;

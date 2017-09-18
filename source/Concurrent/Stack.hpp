@@ -61,6 +61,7 @@ namespace Concurrent
 			return new(_current) Type(std::move(value));
 		};
 		
+		// A pointer to the stack memory allocation.
 		void * base() {return _base;}
 		void * bottom() {return _bottom;}
 		void * current() {return _current;}
@@ -68,6 +69,7 @@ namespace Concurrent
 		
 		// The current available stack space:
 		std::size_t size() {return (Byte*)_current - (Byte*)_bottom;}
+		std::size_t allocated_size() {return (Byte*)top() - (Byte*)base();}
 		
 	private:
 		void * _base, * _bottom, * _current, * _top;
