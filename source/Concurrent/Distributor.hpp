@@ -18,13 +18,17 @@
 namespace Concurrent
 {
 	template <typename Type, typename Queue = std::queue<Type>>
-	class Distributor : Queue, std::mutex, std::condition_variable {
+	class Distributor {
 		typedef typename Queue::size_type size_type;
+		
+		mutable std::mutex _mutex;
+		mutable std::condition_variable _queue_ready;
 		
 		size_type _capacity;
 		bool _done = false;
 		std::vector<std::thread> _threads;
-
+		Queue _queue;
+		
 	public:
 		Distributor(size_type max_items_per_thread = 1, size_type concurrency = std::thread::hardware_concurrency()) : _capacity{concurrency * max_items_per_thread}
 		{
@@ -41,43 +45,47 @@ namespace Concurrent
 		~Distributor()
 		{
 			{
-				std::lock_guard<std::mutex> guard(*this);
+				std::lock_guard<std::mutex> guard(_mutex);
 				_done = true;
-				notify_all();
+				_queue_ready.notify_all();
 			}
 			
 			for (auto && thread: _threads) thread.join();
 		}
-
+		
+		size_type concurrency() const noexcept {return _threads.size();}
+		size_type capacity() const noexcept {return _capacity;}
+		size_type waiting() const noexcept {return _queue.size();}
+		
 		void operator()(Type &&value)
 		{
-			std::unique_lock<std::mutex> lock(*this);
+			std::unique_lock<std::mutex> lock(_mutex);
 			
 			if (_capacity > 0)
-				while (Queue::size() >= _capacity)
-					wait(lock);
+				while (_queue.size() >= _capacity)
+					_queue_ready.wait(lock);
 			
-			Queue::push(std::forward<Type>(value));
-			notify_one();
+			_queue.push(std::forward<Type>(value));
+			_queue_ready.notify_one();
 		}
 
 	private:
 		void consume()
 		{
-			std::unique_lock<std::mutex> lock(*this);
+			std::unique_lock<std::mutex> lock(_mutex);
 			
 			while (true) {
-				if (!Queue::empty()) {
-					Type item{std::move(Queue::front())};
-					Queue::pop();
-					notify_one();
+				if (!_queue.empty()) {
+					Type item{std::move(_queue.front())};
+					_queue.pop();
+					_queue_ready.notify_one();
 					lock.unlock();
 					item();
 					lock.lock();
 				} else if (_done) {
 					break;
 				} else {
-					wait(lock);
+					_queue_ready.wait(lock);
 				}
 			}
 		}
