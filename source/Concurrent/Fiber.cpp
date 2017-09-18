@@ -62,15 +62,15 @@ namespace Concurrent
 		Fiber::level += 1;
 
 #if defined(VARIANT_SANITIZE)
-		std::cerr << "__sanitizer_start_switch_fiber (resume)" << std::endl;
 		void * fake_stack = nullptr;
 		__sanitizer_start_switch_fiber(&fake_stack, _stack.base(), _stack.allocated_size());
+		// std::cerr << "__sanitizer_start_switch_fiber (resume, fake_stack=" << fake_stack << ")" << std::endl;
 #endif
 
 		coro_transfer(&_caller->_context, &_context);
 
 #if defined(VARIANT_SANITIZE)
-		std::cerr << "__sanitizer_finish_switch_fiber (resume)" << std::endl;
+		// std::cerr << "__sanitizer_finish_switch_fiber (resume, fake_stack=" << fake_stack << ")" << std::endl;
 		__sanitizer_finish_switch_fiber(fake_stack, nullptr, nullptr);
 #endif
 
@@ -95,15 +95,15 @@ namespace Concurrent
 		// std::cerr << std::string(Fiber::level, '\t') << _annotation << " yielding to " << _caller->_annotation << std::endl;
 
 #if defined(VARIANT_SANITIZE)
-		std::cerr << "__sanitizer_start_switch_fiber (yield)" << std::endl;
 		void * fake_stack = nullptr;
 		__sanitizer_start_switch_fiber(&fake_stack, _caller->_stack.base(), _caller->_stack.allocated_size());
+		// std::cerr << "__sanitizer_start_switch_fiber (yield, fake_stack=" << fake_stack << ")" << std::endl;
 #endif
 
 		coro_transfer(&_context, &_caller->_context);
 
 #if defined(VARIANT_SANITIZE)
-		std::cerr << "__sanitizer_finish_switch_fiber (yield)" << std::endl;
+		// std::cerr << "__sanitizer_finish_switch_fiber (yield, fake_stack=" << fake_stack << ")" << std::endl;
 		__sanitizer_finish_switch_fiber(fake_stack, nullptr, nullptr);
 #endif
 
@@ -112,6 +112,22 @@ namespace Concurrent
 		if (_status == Status::STOPPED) {
 			throw Stop();
 		}
+	}
+	
+	void Fiber::coreturn()
+	{
+		assert(_caller != nullptr);
+
+		// std::cerr << std::string(Fiber::level, '\t') << _annotation << " terminating to " << _caller->_annotation << std::endl;
+
+#if defined(VARIANT_SANITIZE)
+		// std::cerr << "__sanitizer_start_switch_fiber (terminate, fake_stack=nullptr)" << std::endl;
+		__sanitizer_start_switch_fiber(nullptr, _caller->_stack.base(), _caller->_stack.allocated_size());
+#endif
+
+		coro_transfer(&_context, &_caller->_context);
+		
+		std::terminate();
 	}
 
 	void Fiber::transfer()
@@ -124,7 +140,18 @@ namespace Concurrent
 
 		// std::cerr << std::string(Fiber::level, '\t') << "transfer from " << current->_annotation << " to " << _annotation << std::endl;
 
+#if defined(VARIANT_SANITIZE)
+		void * fake_stack = nullptr;
+		__sanitizer_start_switch_fiber(&fake_stack, _stack.base(), _stack.allocated_size());
+		// std::cerr << "__sanitizer_start_switch_fiber (transfer, fake_stack=" << fake_stack << ")" << std::endl;
+#endif
+
 		coro_transfer(&current->_context, &_context);
+
+#if defined(VARIANT_SANITIZE)
+		// std::cerr << "__sanitizer_finish_switch_fiber (transfer, fake_stack=" << fake_stack << ")" << std::endl;
+		__sanitizer_finish_switch_fiber(fake_stack, nullptr, nullptr);
+#endif
 	}
 	
 	void Fiber::wait()

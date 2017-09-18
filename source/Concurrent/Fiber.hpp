@@ -21,7 +21,6 @@
 #include <list>
 
 #if defined(VARIANT_SANITIZE)
-#include <iostream>
 #include <sanitizer/common_interface_defs.h>
 #endif
 
@@ -110,6 +109,8 @@ namespace Concurrent
 		Fiber() noexcept;
 		[[noreturn]] static void coentry(void * arg);
 		
+		[[noreturn]] void coreturn();
+		
 		Status _status = Status::READY;
 		std::string _annotation;
 		
@@ -158,10 +159,8 @@ namespace Concurrent
 		auto * coentry = reinterpret_cast<Coentry*>(arg);
 		
 #if defined(VARIANT_SANITIZE)
-		std::cerr << "__sanitizer_finish_switch_fiber (call)" << std::endl;
-		const void * parent_stack_base = nullptr;
-		std::size_t parent_stack_size = 0;
-		__sanitizer_finish_switch_fiber(nullptr, &parent_stack_base, &parent_stack_size);
+		// std::cerr << "__sanitizer_finish_switch_fiber (cocall, fake_stack=nullptr)" << std::endl;
+		__sanitizer_finish_switch_fiber(nullptr, nullptr, nullptr);
 #endif
 		
 		try {
@@ -181,8 +180,6 @@ namespace Concurrent
 		// Going out of scope.
 		coentry->~Coentry();
 		
-		fiber->yield();
-		
-		std::terminate();
+		fiber->coreturn();
 	}
 }
