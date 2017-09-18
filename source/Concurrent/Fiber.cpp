@@ -46,25 +46,25 @@ namespace Concurrent
 #if defined(VARIANT_SANITIZE)
 	void Fiber::start_push_stack(std::string annotation)
 	{
-		std::cerr << "Fiber::start_push_stack(" << annotation << ", " << _stack.base() << ", " << _stack.allocated_size() << ")" << std::endl;
+		// std::cerr << "Fiber::start_push_stack(" << annotation << ", " << _stack.base() << ", " << _stack.allocated_size() << ")" << std::endl;
 		__sanitizer_start_switch_fiber(&_fake_stack, _stack.base(), _stack.allocated_size());
 	}
 	
 	void Fiber::finish_push_stack(std::string annotation)
 	{
 		__sanitizer_finish_switch_fiber(_fake_stack, &_from_stack_bottom, &_from_stack_size);
-		std::cerr << "Fiber::finish_push_stack(" << annotation << ", " << _from_stack_bottom << ", " << _from_stack_size << ")" << std::endl;
+		// std::cerr << "Fiber::finish_push_stack(" << annotation << ", " << _from_stack_bottom << ", " << _from_stack_size << ")" << std::endl;
 	}
 	
 	void Fiber::start_pop_stack(std::string annotation)
 	{
-		std::cerr << "Fiber::start_pop_stack(" << annotation << ", " << _from_stack_bottom << ", " << _from_stack_size << ")" << std::endl;
+		// std::cerr << "Fiber::start_pop_stack(" << annotation << ", " << _from_stack_bottom << ", " << _from_stack_size << ")" << std::endl;
 		__sanitizer_start_switch_fiber(&_fake_stack, _from_stack_bottom, _from_stack_size);
 	}
 	
 	void Fiber::finish_pop_stack(std::string annotation, bool fake_stack)
 	{
-		std::cerr << "Fiber::finish_pop_stack(" << annotation << ")" << std::endl;
+		// std::cerr << "Fiber::finish_pop_stack(" << annotation << ")" << std::endl;
 		__sanitizer_finish_switch_fiber(fake_stack ? _fake_stack : nullptr, nullptr, nullptr);
 	}
 #endif
@@ -119,13 +119,13 @@ namespace Concurrent
 		// std::cerr << std::string(Fiber::level, '\t') << _annotation << " yielding to " << _caller->_annotation << std::endl;
 
 #if defined(VARIANT_SANITIZE)
-		_caller->start_pop_stack("yield");
+		start_pop_stack("yield");
 #endif
 
 		coro_transfer(&_context, &_caller->_context);
 
 #if defined(VARIANT_SANITIZE)
-		_caller->finish_push_stack("yield");
+		finish_push_stack("yield");
 #endif
 
 		// std::cerr << std::string(Fiber::level, '\t') << "yield back to " << _annotation << std::endl;
@@ -163,7 +163,7 @@ namespace Concurrent
 		// std::cerr << std::string(Fiber::level, '\t') << _annotation << " terminating to " << _caller->_annotation << std::endl;
 
 #if defined(VARIANT_SANITIZE)
-		_caller->start_pop_stack("coreturn");
+		start_pop_stack("coreturn");
 #endif
 
 		coro_transfer(&_context, &_caller->_context);

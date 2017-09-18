@@ -109,7 +109,7 @@ namespace Concurrent
 
 #if defined(VARIANT_SANITIZE)
 		void * _fake_stack = nullptr;
-		void * _from_stack_bottom = nullptr;
+		const void * _from_stack_bottom = nullptr;
 		std::size_t _from_stack_size = 0;
 		
 		void start_push_stack(std::string annotation);
