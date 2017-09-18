@@ -20,10 +20,6 @@
 #include <string>
 #include <list>
 
-#if defined(VARIANT_SANITIZE)
-#include <sanitizer/common_interface_defs.h>
-#endif
-
 namespace Concurrent
 {
 	enum class Status
@@ -110,6 +106,18 @@ namespace Concurrent
 		[[noreturn]] static void coentry(void * arg);
 		
 		[[noreturn]] void coreturn();
+
+#if defined(VARIANT_SANITIZE)
+		void * _fake_stack = nullptr;
+		void * _from_stack_bottom = nullptr;
+		std::size_t _from_stack_size = 0;
+		
+		void start_push_stack(std::string annotation);
+		void finish_push_stack(std::string annotation);
+		
+		void start_pop_stack(std::string annotation);
+		void finish_pop_stack(std::string annotation, bool fake_stack = true);
+#endif
 		
 		Status _status = Status::READY;
 		std::string _annotation;
@@ -159,8 +167,7 @@ namespace Concurrent
 		auto * coentry = reinterpret_cast<Coentry*>(arg);
 		
 #if defined(VARIANT_SANITIZE)
-		// std::cerr << "__sanitizer_finish_switch_fiber (cocall, fake_stack=nullptr)" << std::endl;
-		__sanitizer_finish_switch_fiber(nullptr, nullptr, nullptr);
+		fiber->finish_push_stack("cocall");
 #endif
 		
 		try {
