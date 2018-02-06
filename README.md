@@ -4,6 +4,10 @@ Provides basic concurrency primitives.
 
 [![Build Status](https://travis-ci.org/kurocha/concurrent.svg?branch=master)](https://travis-ci.org/kurocha/concurrent)
 
+## Motivation
+
+C++ Coroutines are [a negative overhead abstraction](https://www.youtube.com/watch?v=_fu0gx-xseY). They allow for efficient, expressive code which is far superior to manual state tracking.
+
 ## Setup
 
 Firstly the build tool `teapot` needs to be installed (which requires [Ruby][2]):
