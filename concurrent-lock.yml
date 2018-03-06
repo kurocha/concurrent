@@ -1,0 +1,37 @@
+---
+platforms:
+  :commit: 9b3dc9a1b13108f933146cda6c12a994c5c954a0
+  :branch: master
+build-files:
+  :commit: 00c6cef5ef06157b939ee0775f765a45af763ac1
+  :branch: master
+unit-test:
+  :commit: 2ee55409ca0b999113e2ce45508ae044b3ca4060
+  :branch: master
+generate-cpp-class:
+  :commit: a7219c511be8af5228c4daf575508c5667108998
+  :branch: master
+generate-project:
+  :commit: 84440fd453941ca1e6b1c8bbb020d6605dd8892e
+  :branch: master
+generate-travis:
+  :commit: 206b0412bb9888279db6c0758a33cf22e7b47363
+  :branch: master
+variants:
+  :commit: 03ac6a3c2852c33e5aba0deb6190dcd1070318ee
+  :branch: master
+platform-linux:
+  :commit: da4b316877df89a54e69671f01fcf01ad1e41ed9
+  :branch: master
+build-clang:
+  :commit: e56387e331223851ab2b5202bed767280748f698
+  :branch: master
+build-linux:
+  :commit: 6de534e35547e5f0bb8f35e57d39464facec9df4
+  :branch: master
+streams:
+  :commit: 411a0f2bdf48894cf8d0148a49f79cfc626771aa
+  :branch: master
+generate-template:
+  :commit: ad0dcfb6da64cc0508b71916b30e1050c82ecea7
+  :branch: master

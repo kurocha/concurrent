@@ -12,6 +12,8 @@
 
 namespace Concurrent
 {
+	using namespace UnitTest::Expectations;
+	
 	static std::ostream & operator<<(std::ostream & output, const Status & status)
 	{
 		if (status == Status::MAIN) {
@@ -72,7 +74,7 @@ namespace Concurrent
 				
 				examiner.expect([&]{
 					fiber.resume();
-				}).to_throw<std::logic_error>();
+				}).to(throw_exception<std::logic_error>());
 			}
 		},
 		
