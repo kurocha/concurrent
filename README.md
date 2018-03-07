@@ -124,6 +124,21 @@ The stack includes guard pages to protect against stack overflow.
 
 There is a `Concurrent::Condition` primitive which allows synchronisation between fibers.
 
+#### Fiber Pool
+
+If you have a server which is allocating a fiber per request, use a `Concurrent::Fiber::Pool`. This reuses stacks to minimse per-request overhead.
+
+```c++
+Concurrent::Fiber::Pool pool;
+
+// Server accept loop:
+while (...) {
+	pool.resume([&]{
+		// Per-request work...
+	});
+}
+```
+
 ### Distributor
 
 `Concurrent::Distributor` provides a multi-threaded work queue.
