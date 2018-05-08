@@ -20,6 +20,14 @@
 #include <string>
 #include <list>
 
+#if defined(__SANITIZE_ADDRESS__)
+	#define CONCURRENT_SANITIZE_ADDRESS
+#elif defined(__has_feature)
+	#if __has_feature(address_sanitizer)
+		#define CONCURRENT_SANITIZE_ADDRESS
+	#endif
+#endif
+
 namespace Concurrent
 {
 	enum class Status
@@ -110,7 +118,7 @@ namespace Concurrent
 		
 		[[noreturn]] void coreturn();
 
-#if defined(VARIANT_SANITIZE)
+#if defined(CONCURRENT_SANITIZE_ADDRESS)
 		void * _fake_stack = nullptr;
 		const void * _from_stack_bottom = nullptr;
 		std::size_t _from_stack_size = 0;
@@ -172,7 +180,7 @@ namespace Concurrent
 		auto fiber = Fiber::current;
 		auto * coentry = reinterpret_cast<Coentry*>(arg);
 		
-#if __has_feature(address_sanitizer)
+#if defined(CONCURRENT_SANITIZE_ADDRESS)
 		fiber->finish_push_stack("cocall");
 #endif
 		

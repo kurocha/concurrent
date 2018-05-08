@@ -12,7 +12,7 @@
 #include <iostream>
 #include <cassert>
 
-#if __has_feature(address_sanitizer)
+#if defined(CONCURRENT_SANITIZE_ADDRESS)
 #include <sanitizer/common_interface_defs.h>
 #endif
 
@@ -43,7 +43,7 @@ namespace Concurrent
 		// std::cerr << std::string(Fiber::level, '\t') << "<- ~Fiber " << _annotation << std::endl;
 	}
 	
-#if __has_feature(address_sanitizer)
+#if defined(CONCURRENT_SANITIZE_ADDRESS)
 	void Fiber::start_push_stack(std::string annotation)
 	{
 		// std::cerr << "Fiber::start_push_stack(" << annotation << ", " << _stack.base() << ", " << _stack.allocated_size() << ")" << std::endl;
@@ -87,14 +87,14 @@ namespace Concurrent
 
 		Fiber::level += 1;
 
-#if __has_feature(address_sanitizer)
+#if defined(CONCURRENT_SANITIZE_ADDRESS)
 		start_push_stack("resume");
 #endif
 	
 		// Switch from the fiber that called this function to the fiber this object represents.
 		coro_transfer(&_caller->_context, &_context);
 
-#if __has_feature(address_sanitizer)
+#if defined(CONCURRENT_SANITIZE_ADDRESS)
 		finish_pop_stack("resume");
 #endif
 
@@ -118,13 +118,13 @@ namespace Concurrent
 
 		// std::cerr << std::string(Fiber::level, '\t') << _annotation << " yielding to " << _caller->_annotation << std::endl;
 
-#if __has_feature(address_sanitizer)
+#if defined(CONCURRENT_SANITIZE_ADDRESS)
 		start_pop_stack("yield");
 #endif
 
 		coro_transfer(&_context, &_caller->_context);
 
-#if __has_feature(address_sanitizer)
+#if defined(CONCURRENT_SANITIZE_ADDRESS)
 		finish_push_stack("yield");
 #endif
 
@@ -145,13 +145,13 @@ namespace Concurrent
 
 		// std::cerr << std::string(Fiber::level, '\t') << "transfer from " << current->_annotation << " to " << _annotation << std::endl;
 
-#if __has_feature(address_sanitizer)
+#if defined(CONCURRENT_SANITIZE_ADDRESS)
 		start_push_stack("transfer");
 #endif
 
 		coro_transfer(&current->_context, &_context);
 
-#if __has_feature(address_sanitizer)
+#if defined(CONCURRENT_SANITIZE_ADDRESS)
 		finish_pop_stack("transfer");
 #endif
 	}
@@ -162,7 +162,7 @@ namespace Concurrent
 
 		// std::cerr << std::string(Fiber::level, '\t') << _annotation << " terminating to " << _caller->_annotation << std::endl;
 
-#if __has_feature(address_sanitizer)
+#if defined(CONCURRENT_SANITIZE_ADDRESS)
 		start_pop_stack("coreturn", true);
 #endif
 
