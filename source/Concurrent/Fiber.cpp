@@ -12,14 +12,14 @@
 #include <iostream>
 #include <cassert>
 
-#if defined(VARIANT_SANITIZE)
+#if __has_feature(address_sanitizer)
 #include <sanitizer/common_interface_defs.h>
 #endif
 
 namespace Concurrent
 {
 	thread_local Fiber Fiber::main;
-	thread_local Fiber * Fiber::current;
+	thread_local Fiber * Fiber::current = nullptr;
 	thread_local std::size_t Fiber::level = 0;
 	
 	Fiber::Fiber() noexcept : _status(Status::MAIN), _annotation("main")
@@ -43,7 +43,7 @@ namespace Concurrent
 		// std::cerr << std::string(Fiber::level, '\t') << "<- ~Fiber " << _annotation << std::endl;
 	}
 	
-#if defined(VARIANT_SANITIZE)
+#if __has_feature(address_sanitizer)
 	void Fiber::start_push_stack(std::string annotation)
 	{
 		// std::cerr << "Fiber::start_push_stack(" << annotation << ", " << _stack.base() << ", " << _stack.allocated_size() << ")" << std::endl;
@@ -87,14 +87,14 @@ namespace Concurrent
 
 		Fiber::level += 1;
 
-#if defined(VARIANT_SANITIZE)
+#if __has_feature(address_sanitizer)
 		start_push_stack("resume");
 #endif
 	
 		// Switch from the fiber that called this function to the fiber this object represents.
 		coro_transfer(&_caller->_context, &_context);
 
-#if defined(VARIANT_SANITIZE)
+#if __has_feature(address_sanitizer)
 		finish_pop_stack("resume");
 #endif
 
@@ -118,13 +118,13 @@ namespace Concurrent
 
 		// std::cerr << std::string(Fiber::level, '\t') << _annotation << " yielding to " << _caller->_annotation << std::endl;
 
-#if defined(VARIANT_SANITIZE)
+#if __has_feature(address_sanitizer)
 		start_pop_stack("yield");
 #endif
 
 		coro_transfer(&_context, &_caller->_context);
 
-#if defined(VARIANT_SANITIZE)
+#if __has_feature(address_sanitizer)
 		finish_push_stack("yield");
 #endif
 
@@ -145,13 +145,13 @@ namespace Concurrent
 
 		// std::cerr << std::string(Fiber::level, '\t') << "transfer from " << current->_annotation << " to " << _annotation << std::endl;
 
-#if defined(VARIANT_SANITIZE)
+#if __has_feature(address_sanitizer)
 		start_push_stack("transfer");
 #endif
 
 		coro_transfer(&current->_context, &_context);
 
-#if defined(VARIANT_SANITIZE)
+#if __has_feature(address_sanitizer)
 		finish_pop_stack("transfer");
 #endif
 	}
@@ -162,7 +162,7 @@ namespace Concurrent
 
 		// std::cerr << std::string(Fiber::level, '\t') << _annotation << " terminating to " << _caller->_annotation << std::endl;
 
-#if defined(VARIANT_SANITIZE)
+#if __has_feature(address_sanitizer)
 		start_pop_stack("coreturn");
 #endif
 
@@ -205,5 +205,10 @@ namespace Concurrent
 	
 	Fiber::Pool::~Pool()
 	{
+		// std::cerr << "Fiber pool going out of scope with " << _fibers.size() << " fibers allocated" << std::endl;
+		// 
+		// for (auto && fiber : _fibers) {
+		// 	std::cerr << "\tFiber " << &fiber << " stack " << fiber.stack().top() << ": " << fiber.annotation() << " (" << (std::size_t)(fiber.status()) << ")" << std::endl;
+		// }
 	}
 }

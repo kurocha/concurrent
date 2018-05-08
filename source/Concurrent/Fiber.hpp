@@ -85,6 +85,9 @@ namespace Concurrent
 		
 		void annotate(const std::string & annotation) {_annotation = annotation;}
 		
+		const std::string & annotation() const {return _annotation;}
+		Stack & stack() {return _stack;}
+		
 	private:
 		class Context : public coro_context
 		{
@@ -140,6 +143,9 @@ namespace Concurrent
 			Pool(std::size_t stack_size = DEFAULT_STACK_SIZE);
 			~Pool();
 			
+			Pool(const Pool & other) = delete;
+			Pool & operator=(const Pool & other) = delete;
+			
 			template <typename FunctionT>
 			Fiber & resume(FunctionT && function)
 			{
@@ -166,7 +172,7 @@ namespace Concurrent
 		auto fiber = Fiber::current;
 		auto * coentry = reinterpret_cast<Coentry*>(arg);
 		
-#if defined(VARIANT_SANITIZE)
+#if __has_feature(address_sanitizer)
 		fiber->finish_push_stack("cocall");
 #endif
 		
