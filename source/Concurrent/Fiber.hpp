@@ -118,8 +118,8 @@ namespace Concurrent
 		void start_push_stack(std::string annotation);
 		void finish_push_stack(std::string annotation);
 		
-		void start_pop_stack(std::string annotation);
-		void finish_pop_stack(std::string annotation, bool fake_stack = true);
+		void start_pop_stack(std::string annotation, bool terminating = false);
+		void finish_pop_stack(std::string annotation);
 #endif
 		
 		Status _status = Status::READY;

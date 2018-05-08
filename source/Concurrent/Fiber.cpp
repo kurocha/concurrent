@@ -56,16 +56,16 @@ namespace Concurrent
 		// std::cerr << "Fiber::finish_push_stack(" << annotation << ", " << _from_stack_bottom << ", " << _from_stack_size << ")" << std::endl;
 	}
 	
-	void Fiber::start_pop_stack(std::string annotation)
+	void Fiber::start_pop_stack(std::string annotation, bool terminating)
 	{
-		// std::cerr << "Fiber::start_pop_stack(" << annotation << ", " << _from_stack_bottom << ", " << _from_stack_size << ")" << std::endl;
-		__sanitizer_start_switch_fiber(&_fake_stack, _from_stack_bottom, _from_stack_size);
+		// std::cerr << "Fiber::start_pop_stack(" << annotation << ", " << _from_stack_bottom << ", " << _from_stack_size << ", " << terminating << ")" << std::endl;
+		__sanitizer_start_switch_fiber(terminating ? nullptr : &_fake_stack, _from_stack_bottom, _from_stack_size);
 	}
 	
-	void Fiber::finish_pop_stack(std::string annotation, bool fake_stack)
+	void Fiber::finish_pop_stack(std::string annotation)
 	{
-		// std::cerr << "Fiber::finish_pop_stack(" << annotation << ")" << std::endl;
-		__sanitizer_finish_switch_fiber(fake_stack ? _fake_stack : nullptr, nullptr, nullptr);
+		__sanitizer_finish_switch_fiber(_fake_stack, &_from_stack_bottom, &_from_stack_size);
+		// std::cerr << "Fiber::finish_pop_stack(" << annotation << ", " << _from_stack_bottom << ", " << _from_stack_size << ")" << std::endl;
 	}
 #endif
 	
@@ -163,7 +163,7 @@ namespace Concurrent
 		// std::cerr << std::string(Fiber::level, '\t') << _annotation << " terminating to " << _caller->_annotation << std::endl;
 
 #if __has_feature(address_sanitizer)
-		start_pop_stack("coreturn");
+		start_pop_stack("coreturn", true);
 #endif
 
 		coro_transfer(&_context, &_caller->_context);
