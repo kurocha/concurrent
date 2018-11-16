@@ -107,9 +107,7 @@ namespace Concurrent
 			{
 				auto * coentry = emplace_coentry(stack, std::move(function));
 				
-				coroutine_initialize(this, coentry->cocall, stack.current(), stack.size(), 1);
-				
-				this->arguments[0] = (void*)coentry;
+				coroutine_initialize(this, coentry->cocall, coentry, stack.current(), stack.size());
 			}
 			
 			~Context();
@@ -177,10 +175,10 @@ namespace Concurrent
 	};
 	
 	template <typename FunctionT>
-	COROUTINE Coentry<FunctionT>::cocall(coroutine_context * from, coroutine_context * self)
+	COROUTINE Coentry<FunctionT>::cocall(coroutine_context * from, coroutine_context * self, void * argument)
 	{
 		auto fiber = Fiber::current;
-		auto * coentry = reinterpret_cast<Coentry*>(self->arguments[0]);
+		auto * coentry = reinterpret_cast<Coentry*>(argument);
 		
 #if defined(CONCURRENT_SANITIZE_ADDRESS)
 		fiber->finish_push_stack("cocall");
