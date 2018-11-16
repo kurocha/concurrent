@@ -92,7 +92,7 @@ namespace Concurrent
 #endif
 	
 		// Switch from the fiber that called this function to the fiber this object represents.
-		coro_transfer(&_caller->_context, &_context);
+		coroutine_transfer(&_caller->_context, &_context);
 
 #if defined(CONCURRENT_SANITIZE_ADDRESS)
 		finish_pop_stack("resume");
@@ -122,7 +122,7 @@ namespace Concurrent
 		start_pop_stack("yield");
 #endif
 
-		coro_transfer(&_context, &_caller->_context);
+		coroutine_transfer(&_context, &_caller->_context);
 
 #if defined(CONCURRENT_SANITIZE_ADDRESS)
 		finish_push_stack("yield");
@@ -149,7 +149,7 @@ namespace Concurrent
 		start_push_stack("transfer");
 #endif
 
-		coro_transfer(&current->_context, &_context);
+		coroutine_transfer(&current->_context, &_context);
 
 #if defined(CONCURRENT_SANITIZE_ADDRESS)
 		finish_pop_stack("transfer");
@@ -166,7 +166,7 @@ namespace Concurrent
 		start_pop_stack("coreturn", true);
 #endif
 
-		coro_transfer(&_context, &_caller->_context);
+		coroutine_transfer(&_context, &_caller->_context);
 		
 		std::terminate();
 	}
@@ -191,12 +191,12 @@ namespace Concurrent
 	
 	Fiber::Context::Context()
 	{
-		coro_create(this, nullptr, nullptr, nullptr, 0);
+		coroutine_initialize(this, nullptr, nullptr, 0, 0);
 	}
 	
 	Fiber::Context::~Context()
 	{
-		coro_destroy(this);
+		coroutine_destroy(this);
 	}
 	
 	Fiber::Pool::Pool(std::size_t stack_size) : _stack_size(stack_size)

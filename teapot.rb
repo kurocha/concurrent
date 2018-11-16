@@ -36,8 +36,7 @@ define_target 'concurrent-library' do |target|
 	target.depends :platform
 	target.depends "Language/C++11", private: true
 	
-	target.depends "Build/Files"
-	target.depends "Build/Clang"
+	target.depends "Library/Coroutine"
 	
 	target.provides "Library/Concurrent" do
 		append linkflags [
@@ -61,8 +60,28 @@ end
 
 # Configurations
 
+define_configuration "development" do |configuration|
+	configuration[:source] = "http://github.com/kurocha/"
+	
+	configuration.require "coroutine"
+	
+	# Provides all the build related infrastructure:
+	configuration.require "platforms"
+	configuration.require "build-files"
+	
+	# Provides unit testing infrastructure and generators:
+	configuration.require "unit-test"
+	
+	# Provides some useful C++ generators:
+	configuration.require 'generate-cpp-class'
+	configuration.require 'generate-project'
+	configuration.require 'generate-travis'
+end
+
 define_configuration "concurrent" do |configuration|
 	configuration[:source] = "http://github.com/kurocha/"
+	
+	configuration.require "coroutine"
 	
 	# Provides all the build related infrastructure:
 	configuration.require "platforms"

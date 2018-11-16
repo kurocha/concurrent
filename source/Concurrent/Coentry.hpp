@@ -11,23 +11,15 @@
 #include <memory>
 #include "Stack.hpp"
 
+#include <Coroutine/Context.h>
+
 namespace Concurrent
 {
 	template <typename FunctionT>
 	struct Coentry {
 		FunctionT function;
 		
-		static void call(void * arg)
-		{
-			auto * self = reinterpret_cast<Coentry*>(arg);
-			
-			(self->function)();
-			
-			// Going out of scope.
-			self->~Coentry();
-		}
-		
-		[[noreturn]] static void cocall(void * arg);
+		static COROUTINE cocall(coroutine_context * from, coroutine_context * self);
 		
 		Coentry(FunctionT && function_) : function(std::move(function_)) {}
 	};

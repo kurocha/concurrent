@@ -11,11 +11,11 @@
 #include <functional>
 #include <exception>
 
+#include <Coroutine/Context.h>
+
 #include "Stack.hpp"
 #include "Condition.hpp"
 #include "Coentry.hpp"
-
-#include "coro.h"
 
 #include <string>
 #include <list>
@@ -97,7 +97,7 @@ namespace Concurrent
 		Stack & stack() {return _stack;}
 		
 	private:
-		class Context : public coro_context
+		class Context : public coroutine_context
 		{
 		public:
 			Context();
@@ -105,9 +105,11 @@ namespace Concurrent
 			template <typename FunctionT>
 			Context(Stack & stack, FunctionT && function)
 			{
-				auto coentry = emplace_coentry(stack, std::move(function));
+				auto * coentry = emplace_coentry(stack, std::move(function));
 				
-				coro_create(this, coentry->cocall, coentry, stack.base(), stack.size());
+				coroutine_initialize(this, coentry->cocall, stack.current(), stack.size(), 1);
+				
+				this->arguments[0] = (void*)coentry;
 			}
 			
 			~Context();
@@ -175,10 +177,10 @@ namespace Concurrent
 	};
 	
 	template <typename FunctionT>
-	[[noreturn]] void Coentry<FunctionT>::cocall(void * arg)
+	COROUTINE Coentry<FunctionT>::cocall(coroutine_context * from, coroutine_context * self)
 	{
 		auto fiber = Fiber::current;
-		auto * coentry = reinterpret_cast<Coentry*>(arg);
+		auto * coentry = reinterpret_cast<Coentry*>(self->arguments[0]);
 		
 #if defined(CONCURRENT_SANITIZE_ADDRESS)
 		fiber->finish_push_stack("cocall");

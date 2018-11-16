@@ -38,10 +38,7 @@ namespace Concurrent
 					x += 1;
 				});
 				
-				void (*call)(void*) = coentry->call;
-				void * arg = reinterpret_cast<void *>(coentry);
-				
-				call(arg);
+				coentry->function();
 				
 				examiner.expect(x) == 1;
 				examiner.expect(copies) == 0;
