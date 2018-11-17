@@ -97,7 +97,7 @@ namespace Concurrent
 		Stack & stack() {return _stack;}
 		
 	private:
-		class Context : public coroutine_context
+		class Context : public CoroutineContext
 		{
 		public:
 			Context();
@@ -175,7 +175,7 @@ namespace Concurrent
 	};
 	
 	template <typename FunctionT>
-	COROUTINE Coentry<FunctionT>::cocall(coroutine_context * from, coroutine_context * self, void * argument)
+	COROUTINE Coentry<FunctionT>::cocall(CoroutineContext * from, CoroutineContext * self, void * argument)
 	{
 		auto fiber = Fiber::current;
 		auto * coentry = reinterpret_cast<Coentry*>(argument);

@@ -191,12 +191,12 @@ namespace Concurrent
 	
 	Fiber::Context::Context()
 	{
-		coroutine_initialize(this, nullptr, nullptr, 0, 0);
+		this->stack_pointer = nullptr;
 	}
 	
 	Fiber::Context::~Context()
 	{
-		coroutine_destroy(this);
+		this->stack_pointer = nullptr;
 	}
 	
 	Fiber::Pool::Pool(std::size_t stack_size) : _stack_size(stack_size)
