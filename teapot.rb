@@ -63,7 +63,7 @@ end
 define_configuration "development" do |configuration|
 	configuration[:source] = "http://github.com/kurocha/"
 	
-	configuration.import "coroutine"
+	configuration.import "concurrent"
 	
 	# Provides all the build related infrastructure:
 	configuration.require "platforms"
