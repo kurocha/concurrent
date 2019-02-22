@@ -22,40 +22,31 @@ end
 # Build Targets
 
 define_target 'concurrent-library' do |target|
-	target.build do
-		source_root = target.package.path + 'source'
-		
-		copy headers: source_root.glob('Concurrent/**/*.{hpp,h}')
-		
-		build static_library: "Concurrent", source_files: source_root.glob('Concurrent/**/*.{cpp,c}')
-	end
+	target.depends "Language/C++14"
 	
-	target.depends 'Build/Files'
-	target.depends 'Build/Clang'
-	
-	target.depends :platform
-	target.depends "Language/C++11", private: true
-	
-	target.depends "Library/Coroutine"
+	target.depends "Library/Coroutine", public: true
 	
 	target.provides "Library/Concurrent" do
-		append linkflags [
-			->{install_prefix + 'lib/libConcurrent.a'},
-		]
+		source_root = target.package.path + 'source'
+		
+		library_path = build static_library: "Concurrent", source_files: source_root.glob('Concurrent/**/*.{cpp,c}')
+		
+		append linkflags library_path
+		append header_search_paths source_root
 	end
 end
 
 define_target "concurrent-tests" do |target|
-	target.build do |*arguments|
-		run tests: 'Concurrent', source_files: target.package.path.glob('test/Concurrent/**/*.cpp'), arguments: arguments
-	end
-	
-	target.depends "Language/C++14", private: true
+	target.depends "Language/C++14"
 	
 	target.depends "Library/UnitTest"
 	target.depends "Library/Concurrent"
 	
-	target.provides "Test/Concurrent"
+	target.provides "Test/Concurrent" do |*arguments|
+		test_root = target.package.path
+		
+		run tests: 'Concurrent', source_files: test_root.glob('test/Concurrent/**/*.cpp'), arguments: arguments
+	end
 end
 
 # Configurations
