@@ -13,6 +13,8 @@
 
 #include <sys/mman.h>
 
+#include <system_error>
+
 namespace Concurrent
 {
 	const std::size_t Stack::ALIGNMENT = 16;
