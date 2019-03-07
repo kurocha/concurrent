@@ -27,7 +27,7 @@ namespace Concurrent
 		Stack(Stack && other);
 		Stack & operator=(Stack && other);
 		
-		~Stack();
+		~Stack() noexcept(false);
 		
 		static const std::size_t ALIGNMENT;
 		

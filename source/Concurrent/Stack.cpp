@@ -28,6 +28,12 @@ namespace Concurrent
 		// The base allocation:
 		_base = ::mmap(0, stack_size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 		
+		if (_base == MAP_FAILED) {
+			_base = nullptr;
+			
+			throw std::system_error(errno, std::generic_category(), "mmap(...)");
+		}
+		
 		// The top of the stack:
 		_top = (Byte*)_base + stack_size;
 		
@@ -43,10 +49,14 @@ namespace Concurrent
 	{
 	}
 	
-	Stack::~Stack()
+	Stack::~Stack() noexcept(false)
 	{
 		if (_base) {
-			::munmap(_base, (Byte*)_top - (Byte*)_base);
+			auto result = ::munmap(_base, (Byte*)_top - (Byte*)_base);
+			
+			if (result == -1) {
+				throw std::system_error(errno, std::generic_category(), "munmap(...)");
+			}
 		}
 	}
 	
