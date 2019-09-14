@@ -73,16 +73,4 @@ define_configuration "concurrent" do |configuration|
 	configuration.public!
 	
 	configuration.require "coroutine"
-	
-	# Provides all the build related infrastructure:
-	configuration.require "platforms"
-	configuration.require "build-files"
-	
-	# Provides unit testing infrastructure and generators:
-	configuration.require "unit-test"
-	
-	# Provides some useful C++ generators:
-	configuration.require 'generate-cpp-class'
-	configuration.require 'generate-project'
-	configuration.require 'generate-travis'
 end
