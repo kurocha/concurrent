@@ -52,7 +52,7 @@ end
 # Configurations
 
 define_configuration "development" do |configuration|
-	configuration[:source] = "http://github.com/kurocha/"
+	configuration[:source] = "https://github.com/kurocha/"
 	
 	configuration.import "concurrent"
 	
