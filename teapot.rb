@@ -37,15 +37,15 @@ define_target 'concurrent-library' do |target|
 end
 
 define_target "concurrent-tests" do |target|
+	target.depends "Library/UnitTest"
 	target.depends "Language/C++14"
 	
-	target.depends "Library/UnitTest"
 	target.depends "Library/Concurrent"
 	
 	target.provides "Test/Concurrent" do |*arguments|
 		test_root = target.package.path
 		
-		run tests: 'Concurrent', source_files: test_root.glob('test/Concurrent/**/*.cpp'), arguments: arguments
+		run source_files: test_root.glob('test/Concurrent/**/*.cpp'), arguments: arguments
 	end
 end
 
