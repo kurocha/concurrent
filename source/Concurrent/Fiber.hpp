@@ -175,10 +175,10 @@ namespace Concurrent
 	};
 	
 	template <typename FunctionT>
-	COROUTINE Coentry<FunctionT>::cocall(CoroutineContext * from, CoroutineContext * self, void * argument)
+	COROUTINE Coentry<FunctionT>::cocall(CoroutineContext * from, CoroutineContext * self)
 	{
 		auto fiber = Fiber::current;
-		auto * coentry = reinterpret_cast<Coentry*>(argument);
+		auto * coentry = reinterpret_cast<Coentry*>(self->argument);
 		
 #if defined(CONCURRENT_SANITIZE_ADDRESS)
 		fiber->finish_push_stack("cocall");

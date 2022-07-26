@@ -19,8 +19,7 @@ namespace Concurrent
 	struct Coentry {
 		FunctionT function;
 		
-		static COROUTINE cocall(CoroutineContext * from, CoroutineContext * self, void * argument);
-		
+		static COROUTINE cocall(CoroutineContext * from, CoroutineContext * self);
 		Coentry(FunctionT && function_) : function(std::move(function_)) {}
 	};
 	

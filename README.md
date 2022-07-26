@@ -1,8 +1,6 @@
 # Concurrent
 
-Provides basic concurrency primitives, including stackful coroutines and multi-threaded work queue.
-
-[![Build Status](https://travis-ci.org/kurocha/concurrent.svg?branch=master)](https://travis-ci.org/kurocha/concurrent)
+Provides basic concurrency primitives, including stackful coroutines.
 
 ## Motivation
 
