@@ -19,7 +19,7 @@
 namespace Concurrent
 {
 	thread_local Fiber Fiber::main;
-	thread_local Fiber * Fiber::current = nullptr;
+	thread_local Fiber * Fiber::current = &Fiber::main;
 	thread_local std::size_t Fiber::level = 0;
 	
 	Fiber::Fiber() noexcept : _status(Status::MAIN), _annotation("main")
@@ -74,11 +74,7 @@ namespace Concurrent
 		// We cannot double-resume.
 		assert(_caller == nullptr);
 
-		if (Fiber::current) {
-			_caller = Fiber::current;
-		} else {
-			_caller = &Fiber::main;
-		}
+		_caller = Fiber::current;
 
 		assert(_status != Status::FINISHED);
 
@@ -139,9 +135,8 @@ namespace Concurrent
 	{
 		Fiber * current = Fiber::current;
 
-		if (current == nullptr) {
-			current = &Fiber::main;
-		}
+		// Transferring to ourselves is a no-op.
+		if (current == this) return;
 
 		// std::cerr << std::string(Fiber::level, '\t') << "transfer from " << current->_annotation << " to " << _annotation << std::endl;
 
@@ -149,7 +144,11 @@ namespace Concurrent
 		start_push_stack("transfer");
 #endif
 
+		Fiber::current = this;
+
 		coroutine_transfer(&current->_context, &_context);
+
+		Fiber::current = current;
 
 #if defined(CONCURRENT_SANITIZE_ADDRESS)
 		finish_pop_stack("transfer");
