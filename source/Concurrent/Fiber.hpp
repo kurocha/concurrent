@@ -32,12 +32,12 @@ namespace Concurrent
 {
 	enum class Status
 	{
-		MAIN,
-		READY,
-		RUNNING,
-		STOPPED,
-		FINISHING,
-		FINISHED
+		MAIN = 0,
+		READY = 1,
+		RUNNING = 2,
+		STOPPED = 3,
+		FINISHING = 4,
+		FINISHED = 5
 	};
 	
 	class Stop {};
@@ -160,9 +160,9 @@ namespace Concurrent
 				_fibers.emplace_back(function);
 				
 				auto & fiber = _fibers.back();
-					
+				
 				fiber.resume();
-					
+				
 				return fiber;
 			}
 			
@@ -179,6 +179,9 @@ namespace Concurrent
 	{
 		auto fiber = Fiber::current;
 		auto * coentry = reinterpret_cast<Coentry*>(self->argument);
+		
+		assert(fiber);
+		assert(coentry);
 		
 #if defined(CONCURRENT_SANITIZE_ADDRESS)
 		fiber->finish_push_stack("cocall");

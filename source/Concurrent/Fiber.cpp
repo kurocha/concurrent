@@ -28,7 +28,7 @@ namespace Concurrent
 	
 	Fiber::~Fiber()
 	{
-		// std::cerr << std::string(Fiber::level, '\t') << "-> ~Fiber " << _annotation << std::endl;
+		// std::cerr << std::string(Fiber::level, '\t') << "-> ~Fiber " << _annotation << " with status " << (int)_status << std::endl;
 
 		if (_status == Status::READY) {
 			// Nothing to do here.
@@ -150,12 +150,12 @@ namespace Concurrent
 
 	void Fiber::transfer()
 	{
+		// Transferring to ourselves is a no-op.
+		if (Fiber::current == this) return;
+
 		Fiber * current = Fiber::current;
 
-		// Transferring to ourselves is a no-op.
-		if (current == this) return;
-
-		// std::cerr << std::string(Fiber::level, '\t') << "transfer from " << current->_annotation << " to " << _annotation << std::endl;
+		// std::cerr << std::string(Fiber::level, '\t') << "transfer from " << current->_annotation << " to " << _annotation << " with status " << (int)_status << std::endl;
 
 #if defined(CONCURRENT_SANITIZE_ADDRESS)
 		start_push_stack("transfer");
@@ -170,19 +170,32 @@ namespace Concurrent
 #if defined(CONCURRENT_SANITIZE_ADDRESS)
 		finish_pop_stack("transfer");
 #endif
+
+		// std::cerr << std::string(Fiber::level, '\t') << "transfer back to " << current->_annotation << " with status " << (int)current->_status << std::endl;
+
+		if (current->_status == Status::STOPPED) {
+			throw Stop();
+		}
 	}
 	
 	void Fiber::coreturn()
 	{
-		assert(_caller != nullptr);
+		auto caller = _caller;
+		
+		// If there was no caller (i.e. transfer), return to the main fiber.
+		if (caller == nullptr) {
+			caller = &Fiber::main;
+		}
+		
+		assert(caller != nullptr);
 
-		// std::cerr << std::string(Fiber::level, '\t') << _annotation << " terminating to " << _caller->_annotation << std::endl;
+		// std::cerr << std::string(Fiber::level, '\t') << _annotation << " terminating to " << caller->_annotation << std::endl;
 
 #if defined(CONCURRENT_SANITIZE_ADDRESS)
 		start_pop_stack("coreturn", true);
 #endif
 
-		coroutine_transfer(&_context, &_caller->_context);
+		coroutine_transfer(&_context, &caller->_context);
 		
 		std::terminate();
 	}
@@ -197,8 +210,9 @@ namespace Concurrent
 	
 	void Fiber::stop()
 	{
-		// Cannot stop self.
-		assert(Fiber::current != this);
+		if (Fiber::current == this) {
+			throw Stop();
+		}
 		
 		_status = Status::STOPPED;
 		
