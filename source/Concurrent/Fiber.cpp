@@ -40,6 +40,16 @@ namespace Concurrent
 			resume();
 		}
 		
+		// On exiting, we should log any uncaught exceptions, otherwise the fiber will silently exit even though it might have failed.
+		if (_exception) {
+			try {
+				std::rethrow_exception(_exception);
+			}
+			catch (const std::exception & exception) {
+				std::cerr << "Fiber '" << _annotation << "' exiting with unhandled exception: " << exception.what() << std::endl;
+			}
+		}
+		
 		// std::cerr << std::string(Fiber::level, '\t') << "<- ~Fiber " << _annotation << std::endl;
 	}
 	
@@ -104,7 +114,14 @@ namespace Concurrent
 
 		// Once we yield back to the caller, if there was an exception, we rethrow it.
 		if (_exception) {
-			std::rethrow_exception(_exception);
+			// Get a copy of the exception pointer:
+			auto exception = _exception;
+			
+			// Clear the exception pointer so we don't rethrow it again:
+			_exception = nullptr;
+			
+			// Throw the exception itself:
+			std::rethrow_exception(exception);
 		}
 	}
 
