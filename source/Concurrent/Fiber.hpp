@@ -195,7 +195,7 @@ namespace Concurrent
 		} catch (...) {
 			fiber->_exception = std::current_exception();
 		}
-
+		
 		fiber->_status = Status::FINISHING;
 		// Notify other fibers that we've completed.
 		fiber->_completion.resume();
