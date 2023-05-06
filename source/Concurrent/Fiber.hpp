@@ -49,6 +49,8 @@ namespace Concurrent
 		thread_local static Fiber * current;
 		thread_local static std::size_t level;
 		
+		bool transient = false;
+		
 		// TODO assess how much of a performance impact this has in the presence of virtual memory. Can it be bigger? Should it be smaller?
 		static constexpr std::size_t DEFAULT_STACK_SIZE = 1024*1024*4;
 		
